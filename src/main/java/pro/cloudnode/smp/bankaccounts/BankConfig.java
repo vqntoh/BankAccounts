@@ -1010,6 +1010,12 @@ public final class BankConfig {
         return MiniMessage.miniMessage().deserialize(Objects.requireNonNull(config.getString("messages.pos-removed")));
     }
 
+    // messages.pos-update
+    public @NotNull Component messagesPosUpdated() {
+        return MiniMessage.miniMessage().deserialize(Objects.requireNonNull(config.getString("messages.pos-removed")));
+    }
+
+
     // messages.pos-purchase
     public @NotNull Component messagesPosPurchase(final @NotNull Transaction transaction, final @NotNull ItemStack @NotNull [] items) {
         return MiniMessage.miniMessage().deserialize(

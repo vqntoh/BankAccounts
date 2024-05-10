@@ -39,18 +39,6 @@ public final class POSCommand extends Command {
         if (args.length < 2)
             return sendUsage(sender, label, (args.length > 0 ? args[0] : "<account>") + " <price> [description]");
 
-        final @NotNull Optional<@NotNull Account> account = Account.get(args[0]);
-        if (account.isEmpty()) return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsAccountNotFound());
-
-        if (account.get().type == Account.Type.PERSONAL && !BankAccounts.getInstance().config().posAllowPersonal() && !player.hasPermission(Permissions.POS_CREATE_PERSONAL))
-            return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsPosCreateBusinessOnly());
-
-        if (account.get().frozen)
-            return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsFrozen(account.get()));
-
-        if (!player.hasPermission(Permissions.POS_CREATE_OTHER) && !account.get().owner.equals(player))
-            return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsNotAccountOwner());
-
         final @NotNull BigDecimal price;
         try {
             price = BigDecimal.valueOf(Double.parseDouble(args[1])).setScale(2, RoundingMode.HALF_UP);
@@ -61,7 +49,6 @@ public final class POSCommand extends Command {
 
         if (price.compareTo(BigDecimal.ZERO) <= 0)
             return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsInvalidNumber(args[1]));
-
 
         final @Nullable Block target = player.getTargetBlockExact(5);
         if (target == null) return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsBlockTooFar());
@@ -74,6 +61,20 @@ public final class POSCommand extends Command {
             return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsPosDoubleChest());
         if (chest.getInventory().isEmpty()) return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsPosEmpty());
         if (POS.get(chest).isPresent()) return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsPosAlreadyExists());
+        if (args[0].equals("add")) {
+            chest.getInventory().addItem(player.getInventory().getItemInMainHand());
+            player.getInventory().getItemInMainHand().setAmount(0);
+            POS.get(chest).get().price.add(new BigDecimal(args[1]));
+            return sendMessage(sender, BankAccounts.getInstance().config().messagesPosUpdated());
+        }
+        final @NotNull Optional<@NotNull Account> account = Account.get(args[0]);
+        if (account.isEmpty()) return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsAccountNotFound());
+        if (account.get().type == Account.Type.PERSONAL && !BankAccounts.getInstance().config().posAllowPersonal() && !player.hasPermission(Permissions.POS_CREATE_PERSONAL))
+            return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsPosCreateBusinessOnly());
+        if (account.get().frozen)
+            return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsFrozen(account.get()));
+        if (!player.hasPermission(Permissions.POS_CREATE_OTHER) && !account.get().owner.equals(player))
+            return sendMessage(sender, BankAccounts.getInstance().config().messagesErrorsNotAccountOwner());
 
         @Nullable String description = args.length > 2 ? String.join(" ", Arrays.copyOfRange(args, 2, args.length)) : null;
         if (description != null && description.length() > 64) description = description.substring(0, 64);
